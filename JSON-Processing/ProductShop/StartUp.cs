@@ -21,11 +21,45 @@ namespace ProductShop
             productShopContext.Database.EnsureDeleted();
             productShopContext.Database.EnsureCreated();
 
-            string inputJson = File.ReadAllText("../../../Datasets/products.json");
+            string userJson = File.ReadAllText("../../../Datasets/users.json");
+            ImportUsers(productShopContext, userJson);
 
-            var result = ImportProducts(productShopContext, inputJson);
+            string productJson = File.ReadAllText("../../../Datasets/products.json");
+            ImportProducts(productShopContext, productJson);
+
+            string categoryJson = File.ReadAllText("../../../Datasets/categories.json");
+            ImportCategories(productShopContext, categoryJson);
+
+            string categoryProductJson = File.ReadAllText("../../../Datasets/categories-products.json");
+            var result = ImportCategoryProducts(productShopContext, categoryProductJson);
+
             Console.WriteLine(result);
 
+        }
+
+        public static string ImportCategoryProducts(ProductShopContext context, string inputJson)
+        {
+            InitializeAutomapper();
+
+            var dtoCategoriesProducts = JsonConvert.DeserializeObject<IEnumerable<CategoryProductInputModel>>(inputJson);
+            var categorProduct = mapper.Map<IEnumerable<CategoryProduct>>(dtoCategoriesProducts);
+            context.CategoryProducts.AddRange(categorProduct);
+            context.SaveChanges();
+
+            return $"Successfully imported {categorProduct.Count()}";
+        }
+
+        public static string ImportCategories(ProductShopContext context, string inputJson)
+        {
+            InitializeAutomapper();
+            var dtoCategory = JsonConvert.DeserializeObject<IEnumerable<CategoryInputModel>>(inputJson).Where(c => c.Name != null)
+                .ToList();
+
+            var category = mapper.Map<IEnumerable<Category>>(dtoCategory);
+            context.Categories.AddRange(category);
+            context.SaveChanges();
+
+            return $"Successfully imported {category.Count()}";
         }
 
         public static string ImportProducts(ProductShopContext context, string inputJson)
