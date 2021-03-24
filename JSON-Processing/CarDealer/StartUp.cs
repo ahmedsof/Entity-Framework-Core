@@ -35,10 +35,69 @@ namespace CarDealer
             //var inputSaleJson = File.ReadAllText("../../../DataSets/sales.json");
             //ImportSales(context, inputSaleJson);
 
-            var result = GetOrderedCustomers(context);
+            var result = GetCarsWithTheirListOfParts(context);
 
             Console.WriteLine(result);
 
+        }
+        public static string GetCarsWithTheirListOfParts(CarDealerContext context)
+        {
+            var cars = context.Cars
+                .Select(c => new
+                {
+                    car = new
+                    {
+                        Make = c.Make,
+                        Model = c.Model,
+                        TravelledDistance = c.TravelledDistance
+
+                    },
+                    parts = c.PartCars.Select(p => new
+                    {
+                        Name = p.Part.Name,
+                        Price = p.Part.Price.ToString("f2")
+
+                    }).ToList()
+                }).ToList();
+
+            var result = JsonConvert.SerializeObject(cars, Formatting.Indented);
+            return result;
+        }
+        public static string GetLocalSuppliers(CarDealerContext context)
+        {
+            var suppliers = context.Suppliers
+                .Where(x => x.IsImporter == false)
+                .Select(x => new
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    PartsCount = x.Parts.Count
+
+                })
+                .ToList();
+
+            var result = JsonConvert.SerializeObject(suppliers, Formatting.Indented);
+            return result;
+        }
+
+        public static string GetCarsFromMakeToyota(CarDealerContext context)
+        {
+            var cars = context.Cars
+                .Where(x => x.Make == "Toyota")
+                .Select(x => new
+                {
+                    Id = x.Id,
+                    Make = x.Make,
+                    Model = x.Model,
+                    TravelledDistance = x.TravelledDistance
+
+                })
+                .OrderBy(x => x.Model)
+                .ThenByDescending(x => x.TravelledDistance)
+                .ToList();
+
+            var result = JsonConvert.SerializeObject(cars, Formatting.Indented);
+            return result;
         }
 
         public static string GetOrderedCustomers(CarDealerContext context)
